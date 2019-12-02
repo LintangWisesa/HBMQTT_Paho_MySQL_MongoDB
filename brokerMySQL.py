@@ -3,6 +3,7 @@ import asyncio
 from hbmqtt.broker import Broker
 from hbmqtt.client import MQTTClient, ClientException
 from hbmqtt.mqtt.constants import QOS_1
+import pymysql
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,21 @@ def brokerGetMessage():
             message = yield from C.deliver_message()
             packet = message.publish_packet
             print(packet.payload.data.decode('utf-8'))
+            
+            con = pymysql.connect(
+                host = 'localhost',
+                user = 'lintang',
+                password = '12345',
+                db = 'mqttpy',
+                cursorclass = pymysql.cursors.DictCursor
+            )
+            kursor = con.cursor()
+            sql = '''insert into mqttpy (message) values (%s)'''
+            val = str(packet.payload.data.decode('utf-8'))
+            kursor.execute(sql, val)
+            con.commit()
+            print(kursor.rowcount, 'Data saved!')
+
     except ClientException as ce:
         logger.error("Client exception : %s" % ce)
 
